@@ -1,0 +1,37 @@
+language: generic
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t alexdongmu/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true alexdongmu/react-test npm test
+
+after_success:
+  - docker build -t alexdongmu/multi-client ./client
+  - docker build -t alexdongmu/multi-nginx ./nginx
+  - docker build -t alexdongmu/multi-server ./server
+  - docker build -t alexdongmu/multi-worker ./worker
+
+  # Docker login
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  - docker push alexdongmu/multi-client
+  - docker push alexdongmu/multi-nginx
+  - docker push alexdongmu/multi-server
+  - docker push alexdongmu/multi-worker
+ 
+# deploy:
+#   provider: elasticbeanstalk
+#   region: "us-east-2"
+#   app: "docker"
+#   env: "Docker-env-1"
+#   bucket_name: "elasticbeanstalk-us-east-2-492476706062"
+#   bucket_path: "docker"
+#   on:
+#     branch: master
+#   access_key_id: $AWS_ACCESS_KEY
+#   secret_access_key: $AWS_SECRET_KEY
+
+
